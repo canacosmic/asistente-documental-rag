@@ -94,4 +94,4 @@ app.py          Interfaz web en Gradio
 
 ---
 
-*Desarrollado por Rodrigo · Sistemas conversacionales y NLP aplicado.*
+*Desarrollado por Rodrigo Canalizo Macías · Sistemas conversacionales y NLP aplicado.*

@@ -1,0 +1,22 @@
+Guía de adherencia terapéutica en pacientes con obesidad
+
+La adherencia terapéutica se define como el grado en que el comportamiento
+de un paciente coincide con las recomendaciones acordadas con el profesional
+de salud. En pacientes con obesidad, la baja adherencia es uno de los
+principales obstáculos para el éxito del tratamiento.
+
+Factores que afectan la adherencia:
+- Complejidad del régimen: mientras más complejo el plan, menor la adherencia.
+- Apoyo social: el acompañamiento familiar mejora los resultados.
+- Seguimiento frecuente: los controles regulares aumentan la constancia.
+- Motivación intrínseca: los pacientes con metas propias adhieren mejor.
+
+Estrategias recomendadas:
+1. Simplificar el plan de tratamiento tanto como sea posible.
+2. Usar recordatorios y tecnología de acompañamiento continuo.
+3. Establecer metas realistas y medibles junto al paciente.
+4. Reforzar los logros pequeños para mantener la motivación.
+
+Un asistente conversacional puede apoyar la adherencia enviando recordatorios,
+respondiendo dudas frecuentes y manteniendo al paciente conectado con su plan
+entre consultas médicas.

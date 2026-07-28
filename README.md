@@ -1,5 +1,7 @@
 # Kortex · Asistente RAG
 
+![Demo de Kortex](demo.gif)
+
 Sube un documento y hazle preguntas en lenguaje natural. Kortex encuentra la
 información relevante dentro del documento y responde en español **citando la
 fuente**, en lugar de inventar.

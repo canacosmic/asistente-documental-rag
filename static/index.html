@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kortex — Asistente RAG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #fbfbfd; --surface: #ffffff; --surface-2: #f5f5f7;
+    --border: #e3e3e8; --text: #1d1d1f; --text-secondary: #6e6e73;
+    --text-muted: #a1a1a6; --accent: #0071e3; --accent-hover: #0077ed;
+    --accent-soft: #e8f1fd; --success: #1a8a4a; --radius: 14px; --radius-sm: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.5;
+    -webkit-font-smoothing: antialiased; padding: 1.5rem;
+  }
+  .app {
+    display: flex; gap: 1.25rem; max-width: 1100px; margin: 0 auto;
+    height: calc(100vh - 3rem); min-height: 520px;
+  }
+
+  /* ---- Barra lateral (1/3) ---- */
+  .lateral {
+    width: 33%; min-width: 280px; display: flex; flex-direction: column; gap: 1rem;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.25rem;
+  }
+  .marca { display: flex; align-items: center; gap: 10px; padding: 0.25rem; }
+  .marca .icono {
+    width: 38px; height: 38px; border-radius: 10px; background: var(--accent-soft);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .marca .icono svg { width: 21px; height: 21px; stroke: var(--accent); }
+  .marca .nombre { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1; }
+  .marca .tag { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+
+  .zona-subida {
+    border: 1.5px dashed var(--border); border-radius: var(--radius-sm);
+    padding: 1.75rem 1rem; text-align: center; cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .zona-subida:hover, .zona-subida.arrastrando { border-color: var(--accent); background: var(--accent-soft); }
+  .zona-subida svg { width: 28px; height: 28px; stroke: var(--text-muted); margin-bottom: 0.5rem; }
+  .zona-subida .principal { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.15rem; }
+  .zona-subida .secundario { font-size: 0.78rem; color: var(--text-muted); }
+
+  .archivo-item {
+    display: flex; align-items: center; gap: 9px; padding: 0.6rem 0.75rem;
+    background: var(--surface-2); border-radius: var(--radius-sm);
+  }
+  .archivo-item svg { width: 16px; height: 16px; stroke: var(--accent); flex-shrink: 0; }
+  .archivo-item .nombre { font-size: 0.8rem; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .estado-doc { display: none; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--success); padding: 0 0.25rem; }
+  .estado-doc svg { width: 14px; height: 14px; stroke: var(--success); }
+
+  .boton-principal {
+    padding: 0.7rem; background: var(--accent); color: white; border: none;
+    border-radius: var(--radius-sm); font-size: 0.88rem; font-weight: 500;
+    font-family: inherit; cursor: pointer; transition: background 0.2s;
+  }
+  .boton-principal:hover:not(:disabled) { background: var(--accent-hover); }
+  .boton-principal:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .espaciador { flex: 1; }
+
+  .boton-nuevo {
+    display: none; align-items: center; justify-content: center; gap: 6px;
+    padding: 0.6rem; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font-size: 0.82rem; font-family: inherit;
+    color: var(--text-secondary); cursor: pointer; transition: all 0.2s;
+  }
+  .boton-nuevo:hover { background: var(--border); color: var(--text); }
+  .boton-nuevo svg { width: 15px; height: 15px; stroke: currentColor; }
+
+  /* ---- Chat (2/3) ---- */
+  .chat {
+    flex: 1; display: flex; flex-direction: column;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .chat-cabecera {
+    padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 500; flex-shrink: 0;
+  }
+  .chat-cabecera svg { width: 16px; height: 16px; stroke: var(--text-secondary); }
+  .chat-mensajes { flex: 1; padding: 1.25rem; overflow-y: auto; }
+  .chat-vacio {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; color: var(--text-muted); text-align: center;
+  }
+  .chat-vacio svg { width: 40px; height: 40px; stroke: var(--text-muted); margin-bottom: 0.75rem; opacity: 0.5; }
+  .chat-vacio p { font-size: 0.9rem; max-width: 280px; }
+
+  .msg { margin-bottom: 1.1rem; display: flex; }
+  .msg.usuario { justify-content: flex-end; }
+  .msg.usuario .burbuja { background: var(--accent); color: white; border-radius: 16px 16px 4px 16px; max-width: 78%; }
+  .msg.asistente { gap: 10px; }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 9px; background: var(--accent-soft);
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  }
+  .avatar svg { width: 16px; height: 16px; stroke: var(--accent); }
+  .msg.asistente .burbuja { background: var(--surface-2); border-radius: 4px 16px 16px 16px; max-width: 82%; }
+  .burbuja { padding: 0.7rem 1rem; font-size: 0.9rem; line-height: 1.55; white-space: pre-wrap; }
+  .fuentes {
+    display: flex; width: 100%; align-items: center; gap: 5px;
+    font-size: 0.76rem; color: var(--text-muted);
+    margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px solid var(--border);
+  }
+  .fuentes svg { width: 13px; height: 13px; stroke: var(--text-muted); flex-shrink: 0; }
+
+  .escribiendo { display: inline-flex; gap: 4px; padding: 0.3rem 0; }
+  .escribiendo span { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); animation: pulso 1.4s infinite ease-in-out; }
+  .escribiendo span:nth-child(2) { animation-delay: 0.2s; }
+  .escribiendo span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulso { 0%, 60%, 100% { opacity: 0.3; } 30% { opacity: 1; } }
+
+  .barra-entrada {
+    padding: 0.9rem 1.25rem; border-top: 1px solid var(--border);
+    display: flex; gap: 10px; align-items: center; flex-shrink: 0;
+  }
+  .barra-entrada input {
+    flex: 1; height: 44px; padding: 0 1rem; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 0.9rem; font-family: inherit; color: var(--text); outline: none; transition: border-color 0.2s;
+  }
+  .barra-entrada input:focus { border-color: var(--accent); }
+  .boton-enviar {
+    width: 44px; height: 44px; border-radius: var(--radius-sm); background: var(--accent);
+    border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s; flex-shrink: 0;
+  }
+  .boton-enviar:hover:not(:disabled) { background: var(--accent-hover); }
+  .boton-enviar:disabled { opacity: 0.5; cursor: not-allowed; }
+  .boton-enviar svg { width: 19px; height: 19px; stroke: white; }
+
+  /* ---- Responsive: en movil se apilan ---- */
+  @media (max-width: 720px) {
+    body { padding: 1rem; }
+    .app { flex-direction: column; height: auto; }
+    .lateral { width: 100%; min-width: 0; }
+    .chat { min-height: 420px; }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #000000; --surface: #1c1c1e; --surface-2: #2c2c2e; --border: #38383a; --text: #f5f5f7; --text-secondary: #98989d; --text-muted: #6e6e73; --accent-soft: #12233a; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="lateral">
+    <div class="marca">
+      <div class="icono">
+        <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2a3 3 0 00-3 3 3 3 0 00-3 3 3 3 0 00-1 5.8V17a3 3 0 003 3h.5M12 2a3 3 0 013 3 3 3 0 013 3 3 3 0 011 5.8V17a3 3 0 01-3 3h-.5M12 2v18"/></svg>
+      </div>
+      <div>
+        <div class="nombre">Kortex</div>
+        <div class="tag">Asistente RAG</div>
+      </div>
+    </div>
+
+    <div class="zona-subida" id="zonaSubida">
+      <svg fill="none" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+      <p class="principal">Arrastra tu documento</p>
+      <p class="secundario">PDF, TXT o MD</p>
+      <input type="file" id="inputArchivo" accept=".pdf,.txt,.md" multiple hidden />
+    </div>
+
+    <div id="listaArchivos"></div>
+    <div class="estado-doc" id="estadoDoc">
+      <svg fill="none" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 6L9 17l-5-5"/></svg>
+      Documento indexado
+    </div>
+
+    <button class="boton-principal" id="botonProcesar" disabled>Procesar documento</button>
+
+    <div class="espaciador"></div>
+
+    <button class="boton-nuevo" id="botonNuevo">
+      <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 12a8 8 0 018-8V2.5L16 6l-4 3.5V7a5 5 0 100 10 5 5 0 004.5-2.8"/></svg>
+      Nuevo documento
+    </button>
+  </aside>
+
+  <main class="chat">
+    <div class="chat-cabecera">
+      <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      Conversación
+    </div>
+
+    <div class="chat-mensajes" id="chatMensajes">
+      <div class="chat-vacio" id="chatVacio">
+        <svg fill="none" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <p>Sube un documento y pregúntale lo que quieras. Cada respuesta cita su fuente.</p>
+      </div>
+    </div>
+
+    <div class="barra-entrada">
+      <input type="text" id="inputPregunta" placeholder="Escribe tu pregunta…" disabled />
+      <button class="boton-enviar" id="botonEnviar" disabled aria-label="Enviar pregunta">
+        <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5M5 12l7-7 7 7"/></svg>
+      </button>
+    </div>
+  </main>
+
+</div>
+
+<script>
+  const inputArchivo = document.getElementById('inputArchivo');
+  const zonaSubida = document.getElementById('zonaSubida');
+  const listaArchivos = document.getElementById('listaArchivos');
+  const estadoDoc = document.getElementById('estadoDoc');
+  const botonProcesar = document.getElementById('botonProcesar');
+  const botonNuevo = document.getElementById('botonNuevo');
+  const chatMensajes = document.getElementById('chatMensajes');
+  const inputPregunta = document.getElementById('inputPregunta');
+  const botonEnviar = document.getElementById('botonEnviar');
+
+  let archivosSeleccionados = [];
+
+  const iconoArchivo = '<svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6"/></svg>';
+  const iconoFuente = '<svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6"/></svg>';
+  const iconoRobot = '<svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2l1.5 3.5L17 7l-3.5 1.5L12 12l-1.5-3.5L7 7l3.5-1.5L12 2z"/></svg>';
+  const htmlVacio = '<div class="chat-vacio" id="chatVacio"><svg fill="none" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p>Sube un documento y pregúntale lo que quieras. Cada respuesta cita su fuente.</p></div>';
+
+  zonaSubida.addEventListener('click', () => inputArchivo.click());
+  zonaSubida.addEventListener('dragover', (e) => { e.preventDefault(); zonaSubida.classList.add('arrastrando'); });
+  zonaSubida.addEventListener('dragleave', () => zonaSubida.classList.remove('arrastrando'));
+  zonaSubida.addEventListener('drop', (e) => { e.preventDefault(); zonaSubida.classList.remove('arrastrando'); manejarArchivos(e.dataTransfer.files); });
+  inputArchivo.addEventListener('change', () => manejarArchivos(inputArchivo.files));
+
+  function manejarArchivos(archivos) {
+    archivosSeleccionados = Array.from(archivos);
+    listaArchivos.innerHTML = '';
+    estadoDoc.style.display = 'none';
+    archivosSeleccionados.forEach((a) => {
+      const div = document.createElement('div');
+      div.className = 'archivo-item';
+      div.innerHTML = iconoArchivo + '<span class="nombre">' + a.name + '</span>';
+      listaArchivos.appendChild(div);
+    });
+    botonProcesar.disabled = archivosSeleccionados.length === 0;
+    botonProcesar.textContent = 'Procesar documento';
+  }
+
+  botonProcesar.addEventListener('click', async () => {
+    if (archivosSeleccionados.length === 0) return;
+    botonProcesar.disabled = true;
+    botonProcesar.textContent = 'Procesando…';
+    const formData = new FormData();
+    archivosSeleccionados.forEach((a) => formData.append('archivos', a));
+    try {
+      const resp = await fetch('/procesar', { method: 'POST', body: formData });
+      const data = await resp.json();
+      if (data.ok) {
+        estadoDoc.style.display = 'flex';
+        botonProcesar.textContent = 'Documento listo';
+        inputPregunta.disabled = false;
+        botonEnviar.disabled = false;
+        botonNuevo.style.display = 'flex';
+        inputPregunta.focus();
+      }
+    } catch (err) {
+      botonProcesar.textContent = 'Error al procesar';
+      botonProcesar.disabled = false;
+    }
+  });
+
+  botonNuevo.addEventListener('click', async () => {
+    await fetch('/limpiar', { method: 'POST' });
+    archivosSeleccionados = [];
+    listaArchivos.innerHTML = '';
+    inputArchivo.value = '';
+    estadoDoc.style.display = 'none';
+    botonProcesar.disabled = true;
+    botonProcesar.textContent = 'Procesar documento';
+    botonNuevo.style.display = 'none';
+    inputPregunta.disabled = true;
+    botonEnviar.disabled = true;
+    chatMensajes.innerHTML = htmlVacio;
+  });
+
+  async function enviarPregunta() {
+    const pregunta = inputPregunta.value.trim();
+    if (!pregunta) return;
+    const vacio = document.getElementById('chatVacio');
+    if (vacio) vacio.remove();
+    agregarMensaje('usuario', pregunta);
+    inputPregunta.value = '';
+    inputPregunta.disabled = true;
+    botonEnviar.disabled = true;
+    const idEscribiendo = mostrarEscribiendo();
+    try {
+      const resp = await fetch('/preguntar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pregunta }) });
+      const data = await resp.json();
+      document.getElementById(idEscribiendo).remove();
+      agregarMensaje('asistente', data.respuesta, data.fuentes);
+    } catch (err) {
+      document.getElementById(idEscribiendo).remove();
+      agregarMensaje('asistente', 'Hubo un error al procesar la pregunta.');
+    }
+    inputPregunta.disabled = false;
+    botonEnviar.disabled = false;
+    inputPregunta.focus();
+  }
+
+  botonEnviar.addEventListener('click', enviarPregunta);
+  inputPregunta.addEventListener('keydown', (e) => { if (e.key === 'Enter') enviarPregunta(); });
+
+  function agregarMensaje(rol, texto, fuentes) {
+    const div = document.createElement('div');
+    div.className = 'msg ' + rol;
+    let contenido = '';
+    if (rol === 'asistente') { contenido += '<div class="avatar">' + iconoRobot + '</div>'; }
+    let burbuja = '<div class="burbuja">' + escaparHtml(texto);
+    if (fuentes && fuentes.length > 0) { burbuja += '<div class="fuentes">' + iconoFuente + fuentes.join(', ') + '</div>'; }
+    burbuja += '</div>';
+    div.innerHTML = contenido + burbuja;
+    chatMensajes.appendChild(div);
+    chatMensajes.scrollTop = chatMensajes.scrollHeight;
+  }
+
+  function mostrarEscribiendo() {
+    const id = 'escribiendo-' + Date.now();
+    const div = document.createElement('div');
+    div.className = 'msg asistente';
+    div.id = id;
+    div.innerHTML = '<div class="avatar">' + iconoRobot + '</div><div class="burbuja"><div class="escribiendo"><span></span><span></span><span></span></div></div>';
+    chatMensajes.appendChild(div);
+    chatMensajes.scrollTop = chatMensajes.scrollHeight;
+    return id;
+  }
+
+  function escaparHtml(texto) {
+    const div = document.createElement('div');
+    div.textContent = texto;
+    return div.innerHTML;
+  }
+</script>
+</body>
+</html>
